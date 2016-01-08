@@ -3,11 +3,14 @@ package com.katzen.maptest2;
 import android.Manifest;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
+import android.graphics.BitmapFactory;
+import android.location.Geocoder;
 import android.location.Location;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -18,14 +21,23 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+
+import java.io.IOException;
 
 public class MapsActivity extends FragmentActivity implements
         OnMapReadyCallback,
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
-        LocationListener {
+        LocationListener,
+//        GoogleMap.OnInfoWindowClickListener,
+        GoogleMap.OnMapLongClickListener,
+//        GoogleMap.OnMapClickListener,
+//        GoogleMap.OnMarkerClickListener
+        GoogleMap.OnMapClickListener {
 
     private GoogleMap mMap;
     private GoogleApiClient mGoogleApiClient;
@@ -34,14 +46,13 @@ public class MapsActivity extends FragmentActivity implements
     private LocationRequest mLocationRequest;
 
 
-    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
-            mapFragment.getMapAsync(this);
+        mapFragment.getMapAsync(this);
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
@@ -52,6 +63,21 @@ public class MapsActivity extends FragmentActivity implements
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
                 .setInterval(10 * 1000)
                 .setFastestInterval(1 * 1000);
+        mMap = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map)).getMap();
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        mMap.setMyLocationEnabled(true);
+
+        mMap.setOnMapLongClickListener(this);//must set Listeners during Oncreate
     }
 
 
@@ -146,4 +172,39 @@ public class MapsActivity extends FragmentActivity implements
         mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
     }
 
-           }
+    @Override
+    public void onMapClick(LatLng latLng) {
+        MarkerOptions options = new MarkerOptions().position(latLng);
+        options.title(getAddressFromLatLng(latLng));
+
+        options.icon(BitmapDescriptorFactory.defaultMarker());
+
+        mMap.addMarker(options);
+    }
+
+            private String getAddressFromLatLng(LatLng latLng) {
+        Geocoder geocoder = new Geocoder(this);
+        String address = "";
+        try {
+            address = geocoder
+                    .getFromLocation(latLng.latitude, latLng.longitude, 1)
+                    .get(0).getAddressLine(0);
+        } catch (IOException e) {
+            return address;
+        }
+                return address;
+    }
+
+            @Override
+            public void onMapLongClick(LatLng latLng) {
+                MarkerOptions options = new MarkerOptions().position(latLng);
+                options.title(getAddressFromLatLng(latLng));
+
+                options.icon( BitmapDescriptorFactory.fromBitmap(
+                        BitmapFactory.decodeResource( getResources(),
+                                R.drawable.heart295 ) ) );
+
+                mMap.addMarker(options);
+
+            }
+        }
