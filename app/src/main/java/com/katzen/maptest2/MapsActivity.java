@@ -78,6 +78,10 @@ public class MapsActivity extends FragmentActivity implements
         mMap.setMyLocationEnabled(true);
 
         mMap.setOnMapLongClickListener(this);//must set Listeners during Oncreate
+        CountryDataCollector countries = new CountryDataCollector();    //Asyncc thing
+        countries.execute();
+
+
     }
 
 
